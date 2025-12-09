@@ -1,0 +1,14 @@
+{
+  "base_url": "https://demo1.dev.login.phpr.link/fr?returnUrl=[%2F]&returnQuery=[]",
+  "valid": {
+    "username": "valid@example.com",
+    "password": "ValidPassword123!"
+  },
+  "invalid": {
+    "username": "invalid@example.com",
+    "password": "WrongPassword"
+  },
+  "max_bruteforce_attempts": 5,
+  "protected_check_path": "/account",
+  "remember_me_selector": "input[name=remember]"
+}
