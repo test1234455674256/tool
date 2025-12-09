@@ -34,7 +34,7 @@ jobs:
       - name: Run Authentication Tests
         run: |
           source venv/bin/activate
-          python tests/tests.py
+          python test/tests.py
 
       - name: Upload Report
         uses: actions/upload-artifact@v4
