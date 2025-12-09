@@ -29,7 +29,8 @@ jobs:
           playwright install --with-deps chromium
 
       - name: Create creds.json
-        run: echo "${{ secrets.CREDS_JSON }}" > creds.json
+        run: |
+          printf '%s' "${{ secrets.CREDS_JSON }}" > creds.json
 
       - name: Run Authentication Tests
         run: |
