@@ -9,10 +9,10 @@ jobs:
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
@@ -28,7 +28,7 @@ jobs:
           pip install -r requirements.txt
           playwright install --with-deps chromium
 
-      - name: Create creds.json from GitHub Secrets
+      - name: Create creds.json
         run: echo "${{ secrets.CREDS_JSON }}" > creds.json
 
       - name: Run Authentication Tests
@@ -37,7 +37,7 @@ jobs:
           python tests/tests.py
 
       - name: Upload Report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: auth-report
           path: report.json
