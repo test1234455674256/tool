@@ -31,11 +31,15 @@ jobs:
       - name: Create creds.json
         run: |
           printf '%s' "${{ secrets.CREDS_JSON }}" > creds.json
+          echo "----- creds.json exists? -----"
+          ls -l creds.json
+          echo "----- creds.json content (masked by GitHub) -----"
+          cat creds.json
 
       - name: Run Authentication Tests
         run: |
           source venv/bin/activate
-          python test/tests.py
+          python tests/tests.py   # <-- FIXED PATH
 
       - name: Upload Report
         uses: actions/upload-artifact@v4
