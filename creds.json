@@ -1,7 +1,7 @@
 {
   "base_url": "https://demo1.dev.login.phpr.link/fr?returnUrl=[%2F]&returnQuery=[]",
   "valid": {
-    "username": "YOUR_EMAIL",
+    "username": "wrong@example.com",
     "password": "YOUR_PASSWORD"
   },
   "invalid": {
