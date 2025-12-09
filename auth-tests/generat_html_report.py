@@ -1,95 +1,73 @@
-import json, os, datetime
+import json
+import datetime
 from pathlib import Path
+from html import escape as html_escape
 
-def html_escape(x):
-    return str(x).replace("<","&lt;").replace(">","&gt;")
 
-def status_class(value):
-    """Smart status evaluator for any test output."""
-    if isinstance(value, bool):
-        return "ok" if value else "fail"
+def safe_get(data, key, default="N/A"):
+    """Safely extract nested keys."""
+    return data.get(key, default) if isinstance(data, dict) else default
 
-    if isinstance(value, list):
-        # ok if at least one is 200/302
-        return "ok" if any(v in (200, 302) for v in value) else "fail"
 
+def safe_timestamp(ts):
     try:
-        v = int(value)
-        return "ok" if v in (200, 302) else "warn" if v in (400, 401, 403) else "fail"
+        return datetime.datetime.fromtimestamp(ts, datetime.UTC).strftime("%Y-%m-%d %H:%M UTC")
     except:
-        return "fail"
+        return "N/A"
 
-def generate_html(infile, outfile):
-    with open(infile) as f:
+
+def generate_html(json_path, output_path):
+    json_path = Path(json_path)
+    output_path = Path(output_path)
+
+    if not json_path.exists():
+        raise FileNotFoundError(f"Input JSON not found: {json_path}")
+
+    with open(json_path, "r", encoding="utf-8") as f:
         data = json.load(f)
 
-    ts = datetime.datetime.utcfromtimestamp(data["timestamp"]).strftime("%Y-%m-%d %H:%M UTC")
+    # Safe wrapper to avoid KeyError
+    detected = safe_get(data, "detected", {})
 
-    html = f"""
-<html>
+    html_content = f"""
+<!DOCTYPE html>
+<html lang="en">
 <head>
-<title>Authentication Report — {data['url']}</title>
+<meta charset="UTF-8">
+<title>Authentication Scan Report</title>
 <style>
-    body {{ font-family: Arial; background: #f5f5f5; padding: 20px; }}
-    .box {{ background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; }}
-    table {{ width: 100%; border-collapse: collapse; }}
-    td, th {{ padding: 8px; border-bottom: 1px solid #ccc; font-size: 14px; }}
-    h2 {{ margin-top: 0; }}
-    .ok {{ color: green; font-weight: bold; }}
-    .fail {{ color: red; font-weight: bold; }}
-    .warn {{ color: orange; font-weight: bold; }}
-    pre {{ white-space: pre-wrap; word-wrap: break-word; }}
+    body {{ font-family: Arial, sans-serif; margin: 20px; }}
+    table {{ width: 100%; border-collapse: collapse; margin-top: 20px; }}
+    th, td {{ border: 1px solid #ccc; padding: 8px; text-align: left; }}
+    th {{ background: #f2f2f2; }}
 </style>
 </head>
 <body>
 
-<div class="box">
-    <h2>Authentication Testing Report</h2>
-    <p><b>URL:</b> {html_escape(data["url"])}</p>
-    <p><b>Generated:</b> {ts}</p>
-</div>
+<h2>Authentication Summary Report</h2>
 
-<div class="box">
-    <h2>Detection Summary</h2>
-    <table>
-        <tr><td>Form Action</td><td>{html_escape(data["detected"]["action"])}</td></tr>
-        <tr><td>Method</td><td>{data["detected"]["method"]}</td></tr>
-        <tr><td>Username Field</td><td>{data["detected"]["username_field"]}</td></tr>
-        <tr><td>Password Field</td><td>{data["detected"]["password_field"]}</td></tr>
-        <tr><td>CSRF Token Name</td><td>{data["detected"]["csrf_name"]}</td></tr>
-        <tr><td>CSRF Value Length</td><td>{data["detected"]["csrf_value_len"]}</td></tr>
-    </table>
-</div>
+<table>
+    <tr><th>Field</th><th>Result</th></tr>
+    <tr><td>URL</td><td>{html_escape(safe_get(data, "url"))}</td></tr>
+    <tr><td>Detected Method</td><td>{html_escape(safe_get(detected, "method"))}</td></tr>
+    <tr><td>Form Action</td><td>{html_escape(safe_get(detected, "action"))}</td></tr>
+    <tr><td>Timestamp</td><td>{safe_timestamp(safe_get(data, "timestamp", 0))}</td></tr>
+</table>
 
-<div class="box">
-    <h2>Test Cases (A–Z)</h2>
-    <table>
-        <tr><th>Test</th><th>Value</th><th>Status</th></tr>
+<h3>Additional Details</h3>
+<pre>{html_escape(json.dumps(data, indent=4))}</pre>
+
+</body>
+</html>
 """
 
-    # Dynamically list all test items
-    for key, value in data["tests"].items():
-        label = key.replace("_", " ").title()
-        cls = status_class(value)
-        html += f"<tr><td>{label}</td><td>{html_escape(value)}</td><td class='{cls}'>{cls.upper()}</td></tr>"
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(output_path, "w", encoding="utf-8") as f:
+        f.write(html_content)
 
-    html += """
-    </table>
-</div>
-
-<div class="box">
-    <h2>Full Raw JSON</h2>
-    <pre style="background:#222; color:#0f0; padding:15px; border-radius:6px; font-size:13px;">""" + \
-        html_escape(json.dumps(data, indent=2)) + "</pre></div>"
-
-    html += "</body></html>"
-
-    with open(outfile, "w") as f:
-        f.write(html)
-
-    print(f"[+] HTML report saved at: {outfile}")
+    print(f"HTML report generated: {output_path}")
 
 
 if __name__ == "__main__":
-    Path("auth-tests/reports").mkdir(parents=True, exist_ok=True)
-    generate_html("auth-tests/reports/auth_summary.json", "auth-tests/reports/auth_report.html")
+    generate_html("auth-tests/reports/auth_summary.json",
+                  "auth-tests/reports/auth_report.html")
