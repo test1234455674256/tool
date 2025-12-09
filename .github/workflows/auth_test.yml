@@ -1,0 +1,40 @@
+name: Authentication Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "Target Login URL"
+        required: true
+
+jobs:
+  auth-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Setup Python
+      run: |
+        python3 -m venv .venv
+        source .venv/bin/activate
+        pip install requests beautifulsoup4
+
+    - name: Run Authentication Test
+      env:
+        AUTH_TEST_URL: ${{ github.event.inputs.url }}
+      run: |
+        source .venv/bin/activate
+        python auth-tests/run_auth_tests.py
+
+    - name: Generate HTML Report
+      run: |
+        source .venv/bin/activate
+        python auth-tests/generate_html_report.py
+
+    - name: Upload Report Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: auth-report
+        path: auth-tests/reports/
