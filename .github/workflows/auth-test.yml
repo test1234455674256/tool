@@ -1,34 +1,46 @@
-name: run-auth-tests
+name: Authentication Automation Test
 
 on:
-  workflow_dispatch:
+  workflow_dispatch:        # <-- manual run button enabled
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
 
 jobs:
   run-auth-tests:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
       - name: Setup Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: '3.11'
 
-      - name: Install dependencies
+      - name: Install Dependencies
         run: |
-          pip install -r requirements.txt
+          python -m pip install --upgrade pip
+          pip install playwright requests pyjwt
+
+      - name: Install Playwright Browsers
+        run: |
+          python -m playwright install --with-deps
 
       - name: Create creds.json from GitHub Secrets
         run: |
-          echo "${{ secrets.CREDS_JSON }}" > creds.json
+          echo "$CREDS_JSON" > creds.json
+        env:
+          CREDS_JSON: ${{ secrets.CREDS_JSON }}
 
       - name: Run Authentication Test
-        run: python tests.py
+        run: |
+          python test/tests.py
 
-      - name: Upload Report
-        uses: actions/upload-artifact@v3
+      - name: Upload Report (report.json)
+        uses: actions/upload-artifact@v4
         with:
-          name: report
+          name: auth-test-report
           path: report.json
