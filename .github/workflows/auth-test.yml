@@ -37,7 +37,9 @@ jobs:
 
       - name: Run Authentication Test
         run: |
-          python test/tests.py
+            python -m venv venv
+            ource venv/bin/activate
+            python test/tests.py
 
       - name: Upload Report (report.json)
         uses: actions/upload-artifact@v4
